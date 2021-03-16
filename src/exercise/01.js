@@ -78,7 +78,7 @@ async function updateUser(dispatch, user, updates) {
   dispatch({type: 'start update', updates})
 
   try {
-    const updatedUser = await updateUser(user, updates)
+    const updatedUser = await userClient.updateUser(user, updates)
     dispatch({type: 'finish update', updatedUser})
     return updatedUser
   } catch (error) {
