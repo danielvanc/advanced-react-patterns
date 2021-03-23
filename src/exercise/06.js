@@ -2,6 +2,7 @@
 // http://localhost:3000/isolated/exercise/06.js
 
 import * as React from 'react'
+import warning from 'warning'
 import {Switch} from '../switch'
 
 const callAll = (...fns) => (...args) => fns.forEach(fn => fn?.(...args))
@@ -30,6 +31,7 @@ function useToggle({
   reducer = toggleReducer,
   onChange,
   on: controlledOn,
+  readOnly = false
 } = {}) {
   const {current: initialState} = React.useRef({on: initialOn})
   const [state, dispatch] = React.useReducer(reducer, initialState)
@@ -37,6 +39,18 @@ function useToggle({
   // Determine if we're managing controlled state
   const onIsControlled = controlledOn != null;
   const on = onIsControlled ? controlledOn : state.on
+
+  const hasOnChange = Boolean(onChange)
+
+  React.useEffect(() => {
+    // Add readOnly flag so that you only get the error if readOnly
+    // is specified and set to false
+    // if (!hasOnChange && onIsControlled && !readOnly) {
+    //   console.error('Something bad!');
+    // }
+    // or use the warning package that react uses
+    warning(!(!hasOnChange && onIsControlled && !readOnly), 'Something real bad')
+  }, [hasOnChange, onIsControlled, readOnly])
 
   // We want to call `onChange` any time we need to make a state change, 
   // but we only want to call `dispatch` if `!onIsControlled` (otherwise 
@@ -86,10 +100,10 @@ function useToggle({
   }
 }
 
-function Toggle({on: controlledOn, onChange}) {
-  const {on, getTogglerProps} = useToggle({on: controlledOn, onChange})
+function Toggle({on: controlledOn, onChange, readOnly}) {
+  const {on, getTogglerProps} = useToggle({on: controlledOn, onChange, readOnly})
   const props = getTogglerProps({on})
-  console.log('props:', props)
+
   return <Switch {...props} />
 }
 
@@ -113,6 +127,11 @@ function App() {
   return (
     <div>
       <div>
+        {/* 
+          If user doesn't pass the onChange, it will error.
+          If user passes the readOnly prop as true, it won't error.
+          <Toggle on={bothOn} /> 
+        */}
         <Toggle on={bothOn} onChange={handleToggleChange} />
         <Toggle on={bothOn} onChange={handleToggleChange} />
       </div>
