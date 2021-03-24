@@ -1,6 +1,7 @@
 // Control Props
 // http://localhost:3000/isolated/exercise/06.js
 
+import { noop } from 'lodash'
 import * as React from 'react'
 import { useEffect } from 'react'
 import warning from 'warning'
@@ -32,19 +33,25 @@ function useControlledSwitchWarning(
   // controlPropName,
   // componentName
 ) {
+  const __DEV__ = process.env.NODE_ENV === 'development'
   const isControlled = controlPropValue != null;
   const {current: wasControlled } = React.useRef(isControlled)
+  let effect = noop;
 
-  React.useEffect(() => {
-    warning(
-      !(isControlled && wasControlled),
-      'changing from uncontrolled to controlled'
-    )
-    warning(
-      !(!isControlled && wasControlled),
-      'changing from controlled to uncontrolled'
-    )
-  }, [isControlled, wasControlled])
+  if (__DEV__) {
+    effect = function() {
+      warning(
+        !(isControlled && wasControlled),
+        'changing from uncontrolled to controlled'
+      )
+      warning(
+        !(!isControlled && wasControlled),
+        'changing from controlled to uncontrolled'
+      )
+    }
+  }
+
+  React.useEffect(effect, [effect, isControlled, wasControlled])
 }
 // Based off of the below hook in ReachUI
 // https://github.com/reach/reach-ui/blob/a376daec462ccb53d33f4471306dff35383a03a5/packages/utils/src/index.tsx#L407-L443
@@ -58,20 +65,26 @@ function useOnChangeReadOnlyWarning(
   // initialValueProp,
   // onChangeProp
 ) {
+  const __DEV__ = process.env.NODE_ENV === 'development'
   const isControlled = controlPropValue != null;
+  let effect = noop;
+
+  if (__DEV__) {
+    effect = function() {
+      // Add readOnly flag so that you only get the error if readOnly
+      // is specified and set to false
+      // if (!hasOnChange && onIsControlled && !readOnly) {
+      //   console.error('Something bad!');
+      // }
+      // or use the warning package that react uses
+      warning(
+        !(!hasOnChange && isControlled && !readOnly), 
+        'Something real bad'
+      )
+    }
+  }
   
-  React.useEffect(() => {
-    // Add readOnly flag so that you only get the error if readOnly
-    // is specified and set to false
-    // if (!hasOnChange && onIsControlled && !readOnly) {
-    //   console.error('Something bad!');
-    // }
-    // or use the warning package that react uses
-    warning(
-      !(!hasOnChange && isControlled && !readOnly), 
-      'Something real bad'
-    )
-  }, [hasOnChange, isControlled, readOnly])
+  React.useEffect(effect, [effect, hasOnChange, isControlled, readOnly])
 }
 
 function useToggle({
