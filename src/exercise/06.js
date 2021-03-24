@@ -2,6 +2,7 @@
 // http://localhost:3000/isolated/exercise/06.js
 
 import * as React from 'react'
+import { useEffect } from 'react'
 import warning from 'warning'
 import {Switch} from '../switch'
 
@@ -39,8 +40,20 @@ function useToggle({
   // Determine if we're managing controlled state
   const onIsControlled = controlledOn != null;
   const on = onIsControlled ? controlledOn : state.on
-
   const hasOnChange = Boolean(onChange)
+  const {current: onWasControlled } = React.useRef(onIsControlled)
+
+  // Show warning if swapping from controlled to uncontrolled
+  React.useEffect(() => {
+    warning(
+      !(onIsControlled && !onWasControlled),
+      'changing from uncontrolled to controlled'
+    )
+    warning(
+      !(!onIsControlled && onWasControlled),
+      'changing from controlled to uncontrolled'
+    )
+  }, [onIsControlled, onWasControlled])
 
   React.useEffect(() => {
     // Add readOnly flag so that you only get the error if readOnly
@@ -49,11 +62,14 @@ function useToggle({
     //   console.error('Something bad!');
     // }
     // or use the warning package that react uses
-    warning(!(!hasOnChange && onIsControlled && !readOnly), 'Something real bad')
+    warning(
+      !(!hasOnChange && onIsControlled && !readOnly), 
+      'Something real bad'
+    )
   }, [hasOnChange, onIsControlled, readOnly])
 
-  // We want to call `onChange` any time we need to make a state change, 
-  // but we only want to call `dispatch` if `!onIsControlled` (otherwise 
+  // We want to call `onChange` anytime we need to do a state change, 
+  // but only want to call `dispatch` if `!onIsControlled` (otherwise 
   // we could get unnecessary renders).
   function dispatchWithOnChange(action) {
     if (!onIsControlled) {
@@ -63,9 +79,9 @@ function useToggle({
     onChange?.(reducer({...state, on}, action), action)
   }
   // onChange = suggested changes.
-  // "Suggested changes" refers to: the changes we would make if we were
+  // "Suggested changes": the changes we would make if we were
   // managing the state ourselves. This is similar to how a controlled <input />
-  // `onChange` callback works. When your handler is called, you get an event
+  // `onChang e` callback works. When your handler is called, you get an event
   // which has information about the value input that _would_ be set to if that
   // state were managed internally.
   // So how do we determine our suggested changes? What code do we have to
