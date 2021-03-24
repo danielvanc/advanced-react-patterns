@@ -27,6 +27,53 @@ function toggleReducer(state, {type, initialState}) {
   }
 }
 
+function useControlledSwitchWarning(
+  controlPropValue,
+  // controlPropName,
+  // componentName
+) {
+  const isControlled = controlPropValue != null;
+  const {current: wasControlled } = React.useRef(isControlled)
+
+  React.useEffect(() => {
+    warning(
+      !(isControlled && wasControlled),
+      'changing from uncontrolled to controlled'
+    )
+    warning(
+      !(!isControlled && wasControlled),
+      'changing from controlled to uncontrolled'
+    )
+  }, [isControlled, wasControlled])
+}
+// Based off of the below hook in ReachUI
+// https://github.com/reach/reach-ui/blob/a376daec462ccb53d33f4471306dff35383a03a5/packages/utils/src/index.tsx#L407-L443
+function useOnChangeReadOnlyWarning(
+  controlPropValue,
+  // controlPropName,
+  // componentName,
+  hasOnChange,
+  readOnly,
+  // readOnlyProp,
+  // initialValueProp,
+  // onChangeProp
+) {
+  const isControlled = controlPropValue != null;
+  
+  React.useEffect(() => {
+    // Add readOnly flag so that you only get the error if readOnly
+    // is specified and set to false
+    // if (!hasOnChange && onIsControlled && !readOnly) {
+    //   console.error('Something bad!');
+    // }
+    // or use the warning package that react uses
+    warning(
+      !(!hasOnChange && isControlled && !readOnly), 
+      'Something real bad'
+    )
+  }, [hasOnChange, isControlled, readOnly])
+}
+
 function useToggle({
   initialOn = false,
   reducer = toggleReducer,
@@ -38,35 +85,25 @@ function useToggle({
   const [state, dispatch] = React.useReducer(reducer, initialState)
 
   // Determine if we're managing controlled state
-  const onIsControlled = controlledOn != null;
+  const onIsControlled = controlledOn != null
   const on = onIsControlled ? controlledOn : state.on
-  const hasOnChange = Boolean(onChange)
-  const {current: onWasControlled } = React.useRef(onIsControlled)
-
+  
   // Show warning if swapping from controlled to uncontrolled
-  React.useEffect(() => {
-    warning(
-      !(onIsControlled && !onWasControlled),
-      'changing from uncontrolled to controlled'
-    )
-    warning(
-      !(!onIsControlled && onWasControlled),
-      'changing from controlled to uncontrolled'
-    )
-  }, [onIsControlled, onWasControlled])
-
-  React.useEffect(() => {
-    // Add readOnly flag so that you only get the error if readOnly
-    // is specified and set to false
-    // if (!hasOnChange && onIsControlled && !readOnly) {
-    //   console.error('Something bad!');
-    // }
-    // or use the warning package that react uses
-    warning(
-      !(!hasOnChange && onIsControlled && !readOnly), 
-      'Something real bad'
-    )
-  }, [hasOnChange, onIsControlled, readOnly])
+  // useControlledSwitchWarning(controlledOn, 'on', 'useToggle')
+  useControlledSwitchWarning(controlledOn)
+  
+  // const hasOnChange = Boolean(onChange)
+  // useOnChangeReadOnlyWarning(
+  //   controlledOn, 
+  //   'on', 
+  //   'useToggle',
+  //   Boolean(onChange),
+  //   readOnly,
+  //   'readOnly',
+  //   'initialOn',
+  //   'onChange'
+  // )
+  useOnChangeReadOnlyWarning(controlledOn, Boolean(onChange), readOnly)
 
   // We want to call `onChange` anytime we need to do a state change, 
   // but only want to call `dispatch` if `!onIsControlled` (otherwise 
